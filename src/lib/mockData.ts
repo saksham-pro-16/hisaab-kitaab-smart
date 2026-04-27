@@ -65,6 +65,61 @@ export const products: Product[] = [
   { id: "p53", name: "Britannia Cake", category: "Bakery", price: 30, stock: 28, minStock: 15, unit: "pcs", emoji: "🧁" },
   { id: "p54", name: "Modern Brown Bread", category: "Bakery", price: 50, stock: 14, minStock: 10, unit: "pkt", emoji: "🍞" },
   { id: "p55", name: "Veeba Mayo 250g", category: "Grocery", price: 110, stock: 18, minStock: 10, unit: "btl", emoji: "🥪" },
+
+  // ===== Electronics =====
+  { id: "p56", name: "boAt Rockerz 450 Headphones", category: "Electronics", price: 1499, stock: 8, minStock: 5, unit: "pcs", emoji: "🎧" },
+  { id: "p57", name: "Mi Power Bank 10000mAh", category: "Electronics", price: 999, stock: 14, minStock: 6, unit: "pcs", emoji: "🔋" },
+  { id: "p58", name: "Realme Buds Wireless", category: "Electronics", price: 1799, stock: 6, minStock: 5, unit: "pcs", emoji: "🎧" },
+  { id: "p59", name: "USB-C Cable 1m", category: "Electronics", price: 199, stock: 40, minStock: 20, unit: "pcs", emoji: "🔌" },
+  { id: "p60", name: "Mobile Charger 20W", category: "Electronics", price: 599, stock: 18, minStock: 10, unit: "pcs", emoji: "⚡" },
+  { id: "p61", name: "LED Bulb 9W Philips", category: "Electronics", price: 120, stock: 36, minStock: 20, unit: "pcs", emoji: "💡" },
+  { id: "p62", name: "Extension Board 4-Plug", category: "Electronics", price: 449, stock: 10, minStock: 6, unit: "pcs", emoji: "🔌" },
+  { id: "p63", name: "Duracell AA Battery 4pk", category: "Electronics", price: 180, stock: 28, minStock: 15, unit: "pkt", emoji: "🔋" },
+  { id: "p64", name: "Bluetooth Speaker Mini", category: "Electronics", price: 899, stock: 9, minStock: 5, unit: "pcs", emoji: "🔊" },
+  { id: "p65", name: "Smart Watch Fire-Boltt", category: "Electronics", price: 1599, stock: 5, minStock: 4, unit: "pcs", emoji: "⌚" },
+  { id: "p66", name: "Earphones Wired boAt", category: "Electronics", price: 399, stock: 24, minStock: 12, unit: "pcs", emoji: "🎧" },
+  { id: "p67", name: "Memory Card 32GB", category: "Electronics", price: 349, stock: 16, minStock: 8, unit: "pcs", emoji: "💾" },
+
+  // ===== Clothing =====
+  { id: "p68", name: "Men's Cotton T-Shirt", category: "Clothing", price: 349, stock: 22, minStock: 12, unit: "pcs", emoji: "👕" },
+  { id: "p69", name: "Women's Kurti", category: "Clothing", price: 599, stock: 14, minStock: 8, unit: "pcs", emoji: "👗" },
+  { id: "p70", name: "Kids Shorts", category: "Clothing", price: 249, stock: 18, minStock: 10, unit: "pcs", emoji: "🩳" },
+  { id: "p71", name: "Men's Jeans", category: "Clothing", price: 899, stock: 10, minStock: 6, unit: "pcs", emoji: "👖" },
+  { id: "p72", name: "Cotton Socks 3-pair", category: "Clothing", price: 199, stock: 30, minStock: 15, unit: "pkt", emoji: "🧦" },
+  { id: "p73", name: "Bath Towel", category: "Clothing", price: 299, stock: 16, minStock: 8, unit: "pcs", emoji: "🛁" },
+  { id: "p74", name: "Bedsheet Double", category: "Clothing", price: 749, stock: 8, minStock: 5, unit: "pcs", emoji: "🛏️" },
+  { id: "p75", name: "School Uniform Shirt", category: "Clothing", price: 399, stock: 20, minStock: 10, unit: "pcs", emoji: "👔" },
+  { id: "p76", name: "Saree Cotton Print", category: "Clothing", price: 1299, stock: 6, minStock: 4, unit: "pcs", emoji: "🥻" },
+  { id: "p77", name: "Winter Cap Wool", category: "Clothing", price: 199, stock: 24, minStock: 12, unit: "pcs", emoji: "🧢" },
+  { id: "p78", name: "Inner Vest Pack of 3", category: "Clothing", price: 299, stock: 18, minStock: 10, unit: "pkt", emoji: "👕" },
+  { id: "p79", name: "Handkerchief Set", category: "Clothing", price: 99, stock: 40, minStock: 20, unit: "pkt", emoji: "🧻" },
+
+  // ===== Toys =====
+  { id: "p80", name: "Hot Wheels Car", category: "Toys", price: 149, stock: 28, minStock: 12, unit: "pcs", emoji: "🚗" },
+  { id: "p81", name: "Lego Building Blocks", category: "Toys", price: 599, stock: 10, minStock: 6, unit: "pkt", emoji: "🧱" },
+  { id: "p82", name: "Barbie Doll", category: "Toys", price: 799, stock: 8, minStock: 5, unit: "pcs", emoji: "👸" },
+  { id: "p83", name: "Teddy Bear Medium", category: "Toys", price: 449, stock: 12, minStock: 6, unit: "pcs", emoji: "🧸" },
+  { id: "p84", name: "Cricket Bat Plastic", category: "Toys", price: 249, stock: 16, minStock: 8, unit: "pcs", emoji: "🏏" },
+  { id: "p85", name: "Football Size 5", category: "Toys", price: 399, stock: 10, minStock: 6, unit: "pcs", emoji: "⚽" },
+  { id: "p86", name: "Carrom Board Mini", category: "Toys", price: 899, stock: 6, minStock: 4, unit: "pcs", emoji: "🎯" },
+  { id: "p87", name: "Ludo Board Game", category: "Toys", price: 199, stock: 18, minStock: 10, unit: "pcs", emoji: "🎲" },
+  { id: "p88", name: "Puzzle 100 Pieces", category: "Toys", price: 299, stock: 14, minStock: 8, unit: "pcs", emoji: "🧩" },
+  { id: "p89", name: "Remote Control Car", category: "Toys", price: 1299, stock: 5, minStock: 3, unit: "pcs", emoji: "🚙" },
+  { id: "p90", name: "Coloring Book Set", category: "Toys", price: 149, stock: 32, minStock: 15, unit: "pcs", emoji: "🎨" },
+  { id: "p91", name: "Stuffed Unicorn", category: "Toys", price: 499, stock: 9, minStock: 5, unit: "pcs", emoji: "🦄" },
+  { id: "p92", name: "Yo-Yo Pro", category: "Toys", price: 99, stock: 24, minStock: 12, unit: "pcs", emoji: "🪀" },
+  { id: "p93", name: "Skipping Rope", category: "Toys", price: 149, stock: 20, minStock: 10, unit: "pcs", emoji: "🪢" },
+  { id: "p94", name: "Magic Slate", category: "Toys", price: 179, stock: 22, minStock: 10, unit: "pcs", emoji: "📝" },
+
+  // ===== Stationery / Misc =====
+  { id: "p95", name: "Classmate Notebook", category: "Stationery", price: 60, stock: 50, minStock: 25, unit: "pcs", emoji: "📓" },
+  { id: "p96", name: "Reynolds Pen 5pk", category: "Stationery", price: 50, stock: 40, minStock: 20, unit: "pkt", emoji: "🖊️" },
+  { id: "p97", name: "Camlin Pencil Box", category: "Stationery", price: 199, stock: 18, minStock: 10, unit: "pcs", emoji: "✏️" },
+  { id: "p98", name: "Geometry Box", category: "Stationery", price: 149, stock: 16, minStock: 8, unit: "pcs", emoji: "📐" },
+  { id: "p99", name: "A4 Paper Ream", category: "Stationery", price: 320, stock: 12, minStock: 6, unit: "pkt", emoji: "📄" },
+  { id: "p100", name: "Sticky Notes", category: "Stationery", price: 80, stock: 30, minStock: 15, unit: "pkt", emoji: "🗒️" },
+  { id: "p101", name: "Glue Stick Fevistik", category: "Stationery", price: 35, stock: 44, minStock: 20, unit: "pcs", emoji: "🩹" },
+  { id: "p102", name: "Stapler with Pins", category: "Stationery", price: 199, stock: 14, minStock: 8, unit: "pcs", emoji: "📎" },
 ];
 
 // ===== Bills store (in-memory) =====
