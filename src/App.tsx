@@ -54,6 +54,14 @@ const App = () => (
             }
           />
           <Route
+            path="/insights/predict"
+            element={
+              <AppShell>
+                <PredictStock />
+              </AppShell>
+            }
+          />
+          <Route
             path="/scan"
             element={
               <AppShell>
