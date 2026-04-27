@@ -1,11 +1,7 @@
-import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { InsightCard } from "@/components/InsightCard";
-import { insights, trending, products, Product } from "@/lib/mockData";
-import { Sparkles, TrendingUp, Brain, Plus, Minus, X, CheckCircle2, Search, ShoppingCart, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-
-type ReorderItem = { product: Product; qty: number };
+import { insights, trending } from "@/lib/mockData";
+import { Sparkles, TrendingUp, Brain } from "lucide-react";
 
 export default function Insights() {
   const grouped = {
@@ -13,7 +9,6 @@ export default function Insights() {
     Important: insights.filter((i) => i.priority === "Important"),
     Opportunity: insights.filter((i) => i.priority === "Opportunity"),
   };
-  const [predictOpen, setPredictOpen] = useState(false);
 
   return (
     <div className="space-y-6">
