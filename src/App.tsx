@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Billing from "./pages/Billing";
 import Inventory from "./pages/Inventory";
 import Insights from "./pages/Insights";
+import PredictStock from "./pages/PredictStock";
 import Scan from "./pages/Scan";
 import NotFound from "./pages/NotFound.tsx";
 
