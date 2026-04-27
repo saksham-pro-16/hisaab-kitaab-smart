@@ -24,12 +24,12 @@ export default function Insights() {
               Smart recommendations from your sales, stock and local market trends — updated every hour.
             </p>
           </div>
-          <button
-            onClick={() => setPredictOpen(true)}
+          <Link
+            to="/insights/predict"
             className="bg-white text-primary px-5 py-3 rounded-xl font-bold text-sm shadow-soft hover:scale-105 transition-smooth inline-flex items-center gap-2 shrink-0"
           >
             <Brain className="h-4 w-4" /> Predict Future Stock
-          </button>
+          </Link>
         </div>
       </div>
 
