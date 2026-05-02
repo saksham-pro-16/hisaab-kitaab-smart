@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, useRef } from "react";
 import { products, Product, billStore, Bill } from "@/lib/mockData";
 import {
   Search, Plus, Minus, Trash2, Receipt, Share2, Printer, Sparkles,
-  ScanLine, X, ShoppingBag, ArrowRight, ArrowLeft, CheckCircle2, FileText, Eye,
+  ScanLine, X, ShoppingBag, ArrowRight, ArrowLeft, CheckCircle2, FileText, Eye, Mic, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ function useBills() {
 export default function Billing() {
   const bills = useBills();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [voiceWizardOpen, setVoiceWizardOpen] = useState(false);
   const [viewBill, setViewBill] = useState<Bill | null>(null);
 
   return (
@@ -37,12 +38,20 @@ export default function Billing() {
               Create a bill in seconds. Pick products, choose quantity — pricing is calculated automatically from your inventory.
             </p>
           </div>
-          <button
-            onClick={() => setWizardOpen(true)}
-            className="bg-white text-primary px-5 py-3 rounded-xl font-bold text-sm shadow-soft hover:scale-105 transition-smooth inline-flex items-center gap-2 shrink-0"
-          >
-            <Plus className="h-4 w-4" /> Make a Bill
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => setVoiceWizardOpen(true)}
+              className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg hover:shadow-xl hover:scale-105 border-0 px-5 py-3 rounded-xl font-bold text-sm transition-smooth inline-flex items-center gap-2"
+            >
+              <Mic className="h-4 w-4" /> Voice Bill
+            </button>
+            <button
+              onClick={() => setWizardOpen(true)}
+              className="bg-white text-primary px-5 py-3 rounded-xl font-bold text-sm shadow-soft hover:scale-105 transition-smooth inline-flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" /> Make a Bill
+            </button>
+          </div>
         </div>
       </div>
 
@@ -100,6 +109,7 @@ export default function Billing() {
       </section>
 
       {wizardOpen && <BillWizard onClose={() => setWizardOpen(false)} />}
+      {voiceWizardOpen && <VoiceBillingWizard onClose={() => setVoiceWizardOpen(false)} />}
       {viewBill && <BillDetails bill={viewBill} onClose={() => setViewBill(null)} />}
     </div>
   );
@@ -179,6 +189,10 @@ function BillWizard({ onClose }: { onClose: () => void }) {
       subtotal, gst, discount, total,
     });
     toast.success(`Bill ${id} saved to Previous Bills`);
+    toast.success("WhatsApp Bill Sent!", {
+      description: "Bill & online store link (http://localhost:5173/store) sent to the customer.",
+      duration: 6000,
+    });
     onClose();
   };
 
@@ -419,6 +433,39 @@ function BillWizard({ onClose }: { onClose: () => void }) {
 
 /* ---------------- Bill Details Modal ---------------- */
 function BillDetails({ bill, onClose }: { bill: Bill; onClose: () => void }) {
+  const [waMode, setWaMode] = useState(false);
+  const [waName, setWaName] = useState("");
+  const [waPhone, setWaPhone] = useState("");
+
+  const handleSendWA = () => {
+    if (!waPhone) { toast.error("Phone number is required"); return; }
+    const text = `Hello ${waName},\nHere is your bill from Quick Mart Retail Store:\nBill No: ${bill.id}\nDate: ${formatDate(bill.date)}\nTotal: ₹${bill.total.toFixed(2)}\n\nThank you for shopping!`;
+    window.open(`https://wa.me/91${waPhone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`, '_blank');
+    toast.success("Opening WhatsApp...");
+    setWaMode(false);
+  };
+
+  if (waMode) {
+    return (
+      <Modal onClose={onClose} title="Share via WhatsApp" maxWidth="max-w-md">
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-sm font-semibold mb-1 block">Customer Name</label>
+            <input value={waName} onChange={e=>setWaName(e.target.value)} className="w-full px-3 py-2 bg-muted/50 border border-border focus:border-primary outline-none rounded-lg text-sm" placeholder="e.g. Rahul" />
+          </div>
+          <div>
+            <label className="text-sm font-semibold mb-1 block">Phone Number</label>
+            <input value={waPhone} onChange={e=>setWaPhone(e.target.value)} type="tel" className="w-full px-3 py-2 bg-muted/50 border border-border focus:border-primary outline-none rounded-lg text-sm" placeholder="9876543210" />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setWaMode(false)} className="flex-1 py-2.5 rounded-xl bg-muted text-sm font-semibold hover:bg-secondary transition-smooth">Cancel</button>
+            <button onClick={handleSendWA} className="flex-1 py-2.5 rounded-xl bg-gradient-success text-success-foreground text-sm font-semibold shadow-glow hover:opacity-90 transition-smooth">Send via WhatsApp</button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
     <Modal onClose={onClose} title={`Bill ${bill.id}`} maxWidth="max-w-md">
       <div className="px-5 py-4 space-y-3">
@@ -445,7 +492,7 @@ function BillDetails({ bill, onClose }: { bill: Bill; onClose: () => void }) {
           <button className="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-muted hover:bg-secondary text-xs font-semibold transition-smooth">
             <Printer className="h-4 w-4" /> Print
           </button>
-          <button className="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-success-soft text-success hover:bg-success hover:text-success-foreground text-xs font-semibold transition-smooth">
+          <button onClick={() => setWaMode(true)} className="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-success-soft text-success hover:bg-success hover:text-success-foreground text-xs font-semibold transition-smooth">
             <Share2 className="h-4 w-4" /> WhatsApp
           </button>
           <button className="flex items-center justify-center gap-1 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground text-xs font-semibold shadow-glow transition-smooth">
@@ -485,5 +532,278 @@ function Modal({
         {children}
       </div>
     </div>
+  );
+}
+
+/* ---------------- Voice Billing Wizard ---------------- */
+function VoiceBillingWizard({ onClose }: { onClose: () => void }) {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const recognitionRef = useRef<any>(null);
+
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech Recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+    
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setTranscript("");
+    };
+
+    recognition.onresult = (event: any) => {
+      let fullText = "";
+      for (let i = 0; i < event.results.length; ++i) {
+        fullText += event.results[i][0].transcript;
+      }
+      setTranscript(fullText);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error("Speech recognition error:", e);
+    }
+  };
+
+  const handleDone = () => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+    setIsListening(false);
+    if (transcript.trim().length > 0) {
+      processVoice(transcript);
+    } else {
+      toast.error("Nothing was heard. Please try again.");
+    }
+  };
+
+  const processVoice = async (text: string) => {
+    setProcessing(true);
+    try {
+      const promptText = `You are an AI assistant for an Indian Kirana store voice billing system.
+The user said: "${text}"
+
+Our inventory:
+${products.map(p => `${p.id}: ${p.name} (₹${p.price})`).join('\n')}
+
+Extract the items and quantities. If the user explicitly asks to "save bill", "done", "save it", "save billing", or similar phrases, set saveCommand to true.
+Return ONLY valid JSON exactly like this:
+{
+  "saveCommand": boolean,
+  "items": [
+    { "productId": "string", "qty": number }
+  ]
+}
+Important: Match the items to the inventory list. Do NOT use markdown code blocks.`;
+
+      const attemptProviders = async () => {
+        // 1. Gemini
+        try {
+          const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+          if (!apiKey) throw new Error("Gemini API key is missing.");
+          const { GoogleGenerativeAI } = await import("@google/generative-ai");
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+          const result = await model.generateContent(promptText);
+          return result.response.text();
+        } catch (e) {
+          console.warn("Gemini failed, trying Groq...", e);
+        }
+
+        // 2. Groq
+        try {
+          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+          if (!groqApiKey) throw new Error("Groq API key is missing.");
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("Groq failed, trying OpenRouter...", e);
+        }
+
+        // 3. OpenRouter
+        try {
+          const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+          if (!openRouterApiKey) throw new Error("OpenRouter API key is missing.");
+          const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${openRouterApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash", 
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("OpenRouter failed, trying Mistral...", e);
+        }
+
+        // 4. Mistral
+        try {
+          const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+          if (!mistralApiKey) throw new Error("Mistral API key is missing.");
+          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              model: "mistral-large-latest",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("Mistral failed", e);
+        }
+
+        throw new Error("All AI models failed to process voice command.");
+      };
+
+      const responseText = await attemptProviders();
+      const cleanText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanText);
+
+      const newCartItems: CartItem[] = [];
+      parsed.items.forEach((it: any) => {
+        const prod = products.find(p => p.id === it.productId);
+        if (prod) {
+          newCartItems.push({ product: prod, qty: it.qty || 1 });
+        }
+      });
+
+      let finalCart = cart;
+      setCart(prev => {
+        const combined = [...prev];
+        newCartItems.forEach(newItem => {
+           const existing = combined.find(c => c.product.id === newItem.product.id);
+           if (existing) existing.qty += newItem.qty;
+           else combined.push(newItem);
+        });
+        finalCart = combined;
+        return combined;
+      });
+
+      if (parsed.saveCommand) {
+         handleSave(finalCart);
+      }
+      
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to process voice command. Please try speaking clearly.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSave = (itemsToSave = cart) => {
+    if (itemsToSave.length === 0) {
+       toast.error("Cart is empty. Say some items first!"); 
+       return;
+    }
+    const subtotal = itemsToSave.reduce((s, i) => s + i.product.price * i.qty, 0);
+    const gst = subtotal * 0.05;
+    const total = Math.max(0, subtotal + gst);
+
+    const id = `B-${Math.floor(1000 + Math.random() * 9000)}`;
+    billStore.add({
+      id,
+      date: new Date().toISOString(),
+      items: itemsToSave.map((i) => ({
+        productId: i.product.id,
+        name: i.product.name,
+        emoji: i.product.emoji,
+        price: i.product.price,
+        qty: i.qty,
+      })),
+      subtotal, gst, discount: 0, total,
+    });
+    toast.success(`Voice Bill ${id} saved!`);
+    toast.success("WhatsApp Bill Sent!", {
+      description: "Bill & online store link (http://localhost:5173/store) sent to the customer.",
+      duration: 6000,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal onClose={onClose} title="AI Voice Billing" maxWidth="max-w-xl">
+      <div className="p-8 flex flex-col items-center">
+        <button
+          onClick={isListening ? handleDone : (processing ? () => {} : startListening)}
+          className={cn(
+            "h-24 w-24 rounded-full flex items-center justify-center transition-all mb-6",
+            isListening ? "bg-alert-soft text-alert animate-pulse ring-4 ring-alert/20" : "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-glow hover:scale-105"
+          )}
+        >
+          {processing ? <Loader2 className="h-8 w-8 animate-spin" /> : <Mic className="h-8 w-8" />}
+        </button>
+        <p className="text-sm font-semibold mb-2">
+          {isListening ? "Listening... Tap mic to finish" : processing ? "AI is processing..." : "Tap the mic to start speaking"}
+        </p>
+        <p className="text-sm text-muted-foreground text-center max-w-sm italic min-h-[3rem]">
+          {transcript || '"Add 2 Parle-G and 1 Amul Milk. Save bill."'}
+        </p>
+        
+        {isListening && (
+          <button 
+            onClick={handleDone}
+            className="mt-6 px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-bold shadow-md hover:scale-105 transition-smooth animate-fade-up"
+          >
+            Done Speaking
+          </button>
+        )}
+      </div>
+      
+      {cart.length > 0 && (
+        <div className="border-t border-border p-5 bg-muted/20 animate-fade-up">
+           <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Extracted Items</h3>
+           <div className="space-y-2 mb-5">
+             {cart.map((i, idx) => (
+               <div key={idx} className="flex justify-between items-center text-sm bg-card px-4 py-3 rounded-xl border border-border/60 shadow-sm">
+                 <span className="flex items-center gap-2"><span className="text-xl">{i.product.emoji}</span> {i.product.name}</span>
+                 <span className="font-semibold">{i.qty} × ₹{i.product.price}</span>
+               </div>
+             ))}
+           </div>
+           <div className="flex gap-3">
+             <button onClick={() => setCart([])} className="flex-1 py-3 rounded-xl bg-card border font-semibold text-sm hover:bg-muted transition-smooth">Clear</button>
+             <button onClick={() => handleSave(cart)} className="flex-[2] py-3 rounded-xl bg-gradient-success text-success-foreground font-semibold text-sm shadow-md hover:opacity-90 transition-smooth">Confirm & Save Bill</button>
+           </div>
+        </div>
+      )}
+    </Modal>
   );
 }

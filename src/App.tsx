@@ -10,6 +10,11 @@ import Inventory from "./pages/Inventory";
 import Insights from "./pages/Insights";
 import PredictStock from "./pages/PredictStock";
 import Scan from "./pages/Scan";
+import Marketplace from "./pages/Marketplace";
+import Customers from "./pages/Customers";
+import ManageProducts from "./pages/ManageProducts";
+import Integrations from "./pages/Integrations";
+import Storefront from "./pages/Storefront";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -69,6 +74,39 @@ const App = () => (
               </AppShell>
             }
           />
+          <Route
+            path="/marketplace"
+            element={
+              <AppShell>
+                <Marketplace />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <AppShell>
+                <Customers />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/catalog"
+            element={
+              <AppShell>
+                <ManageProducts />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/integrations"
+            element={
+              <AppShell>
+                <Integrations />
+              </AppShell>
+            }
+          />
+          <Route path="/store" element={<Storefront />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

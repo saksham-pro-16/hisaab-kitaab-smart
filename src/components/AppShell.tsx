@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, ScanLine, Package, Sparkles, Receipt, Bell, Store } from "lucide-react";
+import { LayoutDashboard, ScanLine, Package, Sparkles, Receipt, Bell, Store, Users, ShoppingBag, ListPlus, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -8,6 +8,10 @@ const navItems = [
   { to: "/inventory", label: "Inventory", icon: Package },
   { to: "/insights", label: "AI Insights", icon: Sparkles },
   { to: "/scan", label: "Scan Bill", icon: ScanLine },
+  { to: "/marketplace", label: "Market", icon: ShoppingBag },
+  { to: "/customers", label: "Customers", icon: Users },
+  { to: "/catalog", label: "Catalog", icon: ListPlus },
+  { to: "/integrations", label: "Integrations", icon: Link2 },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -24,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <p className="text-[11px] text-muted-foreground">Smart shop assistant</p>
           </div>
         </div>
-        <nav className="px-3 py-2 space-y-1 flex-1">
+        <nav className="px-3 py-2 space-y-1 flex-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -44,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="m-3 p-4 rounded-2xl bg-gradient-hero text-primary-foreground shadow-glow">
+        <div className="m-3 p-4 rounded-2xl bg-gradient-hero text-primary-foreground shadow-glow shrink-0">
           <p className="text-xs font-semibold opacity-90">Pro Tip</p>
           <p className="mt-1 text-sm leading-snug">Stock cold drinks 2x — summer demand rising.</p>
         </div>
@@ -74,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border px-2 py-2 grid grid-cols-5 gap-1">
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur border-t border-border px-2 py-2 flex overflow-x-auto gap-1 hide-scrollbar">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -82,7 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               end={item.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center gap-0.5 py-1.5 rounded-lg transition-smooth",
+                  "flex flex-col items-center gap-0.5 py-1.5 min-w-[64px] rounded-lg transition-smooth",
                   isActive ? "text-primary" : "text-muted-foreground",
                 )
               }

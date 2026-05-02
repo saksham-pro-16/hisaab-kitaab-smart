@@ -1,30 +1,40 @@
 import { useState } from "react";
-import { products } from "@/lib/mockData";
-import { Search, Plus, Package, AlertTriangle, XCircle, CheckCircle2 } from "lucide-react";
+import { products, billStore } from "@/lib/mockData";
+import { Search, Plus, Package, AlertTriangle, XCircle, CheckCircle2, Sparkles, X, Minus, Loader2, Check } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function Inventory() {
+  const [productList, setProductList] = useState(products);
   const [q, setQ] = useState("");
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
-  const lowCount = products.filter((p) => p.stock > 0 && p.stock < p.minStock).length;
-  const outCount = products.filter((p) => p.stock === 0).length;
+  const [aiReorderOpen, setAiReorderOpen] = useState(false);
+  const [addProductOpen, setAddProductOpen] = useState(false);
+  
+  const filtered = productList.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
+  const lowCount = productList.filter((p) => p.stock > 0 && p.stock < p.minStock).length;
+  const outCount = productList.filter((p) => p.stock === 0).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Inventory</h1>
-          <p className="text-sm text-muted-foreground">Live stock levels across {products.length} products</p>
+          <p className="text-sm text-muted-foreground">Live stock levels across {productList.length} products</p>
         </div>
-        <button className="inline-flex items-center gap-2 bg-gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold text-sm shadow-glow hover:opacity-90 transition-smooth">
-          <Plus className="h-4 w-4" /> Add Product
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setAiReorderOpen(true)} className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-glow hover:scale-105 transition-smooth border-0">
+            <Sparkles className="h-4 w-4" /> AI Reorder
+          </button>
+          <button onClick={() => setAddProductOpen(true)} className="inline-flex items-center gap-2 bg-gradient-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold text-sm shadow-glow hover:opacity-90 transition-smooth">
+            <Plus className="h-4 w-4" /> Add Product
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Total Products" value={`${products.length}`} icon={Package} tone="primary" />
-        <StatCard label="Healthy Stock" value={`${products.length - lowCount - outCount}`} icon={CheckCircle2} tone="success" />
+        <StatCard label="Total Products" value={`${productList.length}`} icon={Package} tone="primary" />
+        <StatCard label="Healthy Stock" value={`${productList.length - lowCount - outCount}`} icon={CheckCircle2} tone="success" />
         <StatCard label="Low Stock" value={`${lowCount}`} icon={AlertTriangle} tone="warning" />
         <StatCard label="Out of Stock" value={`${outCount}`} icon={XCircle} tone="alert" />
       </div>
@@ -83,6 +93,279 @@ export default function Inventory() {
           })}
         </div>
       </div>
+      {aiReorderOpen && <AIReorderModal onClose={() => setAiReorderOpen(false)} />}
+      {addProductOpen && (
+        <AddProductModal 
+          onClose={() => setAddProductOpen(false)} 
+          onAdd={(newProduct) => {
+            products.unshift(newProduct);
+            setProductList([...products]);
+            toast.success("Product added successfully!");
+            setAddProductOpen(false);
+          }} 
+        />
+      )}
     </div>
   );
+}
+
+function AddProductModal({ onClose, onAdd }: { onClose: () => void, onAdd: (p: any) => void }) {
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("");
+  const [category, setCategory] = useState("Grocery");
+  const [emoji, setEmoji] = useState("📦");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !price || !stock) return toast.error("Please fill all fields");
+    
+    const newProduct = {
+      id: `p${Date.now()}`,
+      name,
+      category,
+      price: Number(price),
+      stock: Number(stock),
+      minStock: 10,
+      unit: "pcs",
+      emoji
+    };
+    onAdd(newProduct);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-foreground/40 backdrop-blur-sm animate-fade-up">
+      <div className="w-full max-w-md bg-card rounded-3xl shadow-elevated border border-border/60 overflow-hidden flex flex-col">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-gradient-primary text-primary-foreground">
+          <Package className="h-5 w-5" />
+          <h2 className="font-bold text-lg flex-1">Add New Product</h2>
+          <button onClick={onClose} className="h-8 w-8 grid place-items-center rounded-full hover:bg-white/20 transition-smooth text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Product Name</label>
+            <input value={name} onChange={e => setName(e.target.value)} className="w-full p-2.5 rounded-xl bg-muted/60 border border-transparent focus:bg-card focus:border-primary outline-none transition-smooth text-sm" placeholder="e.g. Aashirvaad Atta" required />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Price (₹)</label>
+              <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-2.5 rounded-xl bg-muted/60 border border-transparent focus:bg-card focus:border-primary outline-none transition-smooth text-sm" placeholder="100" required />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Current Stock</label>
+              <input type="number" value={stock} onChange={e => setStock(e.target.value)} className="w-full p-2.5 rounded-xl bg-muted/60 border border-transparent focus:bg-card focus:border-primary outline-none transition-smooth text-sm" placeholder="25" required />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Category</label>
+              <input value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2.5 rounded-xl bg-muted/60 border border-transparent focus:bg-card focus:border-primary outline-none transition-smooth text-sm" placeholder="Grocery" required />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Emoji</label>
+              <input value={emoji} onChange={e => setEmoji(e.target.value)} className="w-full p-2.5 rounded-xl bg-muted/60 border border-transparent focus:bg-card focus:border-primary outline-none transition-smooth text-sm" placeholder="📦" required />
+            </div>
+          </div>
+          <div className="pt-4 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-muted">Cancel</button>
+            <button type="submit" className="px-5 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground font-semibold text-sm shadow-md">Add Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AIReorderModal({ onClose }: { onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [list, setList] = useState<{ id: string; name: string; qty: number; emoji: string; reason: string }[]>([]);
+  const [analyzed, setAnalyzed] = useState(false);
+
+  const analyze = async () => {
+    setLoading(true);
+    try {
+      const allProducts = products.map(p => ({ id: p.id, name: p.name, stock: p.stock, minStock: p.minStock }));
+      const allBills = billStore.getAll(); // Send all bills for accurate trend analysis
+
+      const promptText = `You are an AI inventory manager for a retail Kirana store.
+      Your task is to predict and generate a dynamic list of products that need to be reordered today. 
+      
+      You must evaluate reorder priority using the following logic:
+      1. SALES TRENDS (60% weightage): Analyze ALL the provided historical bills. Identify which products are selling the most, detect patterns, and predict future spikes in demand. High-velocity items must be reordered even if they haven't hit zero yet.
+      2. INVENTORY LEVELS (40% weightage): Analyze the current stock vs minimum stock threshold.
+      
+      As new bills are generated and stock reduces, your output must adapt instantly to these changes.
+      
+      Current Inventory: ${JSON.stringify(allProducts)}
+      All Historical Bills: ${JSON.stringify(allBills)}
+      
+      Output the top suggested products to reorder. For each item, specify the suggested quantity to order and a very short reason (e.g. "Trending item: 25 sold recently" or "Critical: Only 2 left in stock").
+      Return ONLY a raw JSON array of objects with keys: id (string), name (string), emoji (string), qty (number), reason (string).
+      Do NOT wrap in markdown code blocks.`;
+
+      const attemptProviders = async () => {
+        // 1. Gemini
+        try {
+          const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+          if (!apiKey) throw new Error("Gemini API key is missing.");
+          const { GoogleGenerativeAI } = await import("@google/generative-ai");
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+          const result = await model.generateContent(promptText);
+          return result.response.text();
+        } catch (e) {
+          console.warn("Gemini failed, trying Groq...", e);
+        }
+
+        // 2. Groq
+        try {
+          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+          if (!groqApiKey) throw new Error("Groq API key is missing.");
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("Groq failed, trying OpenRouter...", e);
+        }
+
+        // 3. OpenRouter
+        try {
+          const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+          if (!openRouterApiKey) throw new Error("OpenRouter API key is missing.");
+          const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${openRouterApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash", 
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("OpenRouter failed, trying Mistral...", e);
+        }
+
+        // 4. Mistral
+        try {
+          const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+          if (!mistralApiKey) throw new Error("Mistral API key is missing.");
+          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              model: "mistral-large-latest",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("Mistral failed", e);
+        }
+
+        throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral) failed to process.");
+      };
+
+      const responseText = await attemptProviders();
+      const text = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      let parsed = [];
+      try {
+        parsed = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Failed to parse AI response. Try again.");
+      }
+      setList(parsed);
+      setAnalyzed(true);
+      toast.success("AI Analysis complete!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to analyze inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitReorder = () => {
+    toast.success("Reorder list submitted to suppliers successfully!");
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-foreground/40 backdrop-blur-sm animate-fade-up">
+       <div className="w-full max-w-2xl bg-card rounded-3xl shadow-elevated border border-border/60 overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white">
+            <Sparkles className="h-5 w-5" />
+            <h2 className="font-bold text-lg flex-1">AI Smart Reorder</h2>
+            <button onClick={onClose} className="h-8 w-8 grid place-items-center rounded-full hover:bg-white/20 transition-smooth text-white">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          
+          <div className="p-5 overflow-y-auto flex-1 bg-card">
+             {!analyzed && !loading && (
+               <div className="text-center py-10 space-y-4">
+                 <div className="h-16 w-16 bg-muted text-foreground rounded-full grid place-items-center mx-auto border border-border"><Sparkles className="h-8 w-8" /></div>
+                 <h3 className="text-lg font-bold">Let Gemini Analyze Your Inventory</h3>
+                 <p className="text-sm text-muted-foreground max-w-md mx-auto">We will look at your current stock levels, low-stock alerts, and recent sales trends from your billing history to predict exactly what and how much you need to reorder.</p>
+                 <button onClick={analyze} className="mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-6 py-3 rounded-xl font-bold shadow-glow hover:scale-105 transition-smooth">Start Analysis</button>
+               </div>
+             )}
+             
+             {loading && (
+               <div className="text-center py-12 space-y-4 animate-pulse">
+                 <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto" />
+                 <p className="font-semibold">Gemini is crunching numbers...</p>
+               </div>
+             )}
+             
+             {analyzed && (
+               <div className="space-y-4">
+                 <p className="text-sm text-muted-foreground">Review the AI-suggested reorder quantities. You can adjust them before confirming.</p>
+                 <div className="space-y-2">
+                   {list.map((it, idx) => (
+                     <div key={idx} className="flex items-center gap-3 p-3 bg-muted/30 border border-border/60 rounded-xl">
+                       <span className="text-2xl">{it.emoji}</span>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-semibold text-sm truncate">{it.name}</p>
+                         <p className="text-[10px] text-muted-foreground truncate">{it.reason}</p>
+                       </div>
+                       <div className="flex items-center gap-1 bg-card rounded-lg p-0.5 border border-border">
+                          <button onClick={() => setList(l => l.map((x,i) => i===idx ? {...x, qty: Math.max(0, x.qty-1)} : x))} className="h-7 w-7 grid place-items-center hover:bg-muted rounded"><Minus className="h-3 w-3"/></button>
+                          <input type="number" value={it.qty} onChange={e => setList(l => l.map((x,i) => i===idx ? {...x, qty: +e.target.value} : x))} className="w-10 text-center text-sm font-bold bg-transparent outline-none" />
+                          <button onClick={() => setList(l => l.map((x,i) => i===idx ? {...x, qty: x.qty+1} : x))} className="h-7 w-7 grid place-items-center hover:bg-muted rounded"><Plus className="h-3 w-3"/></button>
+                       </div>
+                       <button onClick={() => setList(l => l.filter((_,i) => i !== idx))} className="text-muted-foreground hover:text-alert p-2"><X className="h-4 w-4"/></button>
+                     </div>
+                   ))}
+                   {list.length === 0 && <p className="text-sm text-center py-4 text-muted-foreground">No items to reorder right now.</p>}
+                 </div>
+               </div>
+             )}
+          </div>
+          
+          {analyzed && (
+            <div className="p-4 border-t border-border bg-card flex justify-end gap-3">
+               <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-muted">Cancel</button>
+               <button onClick={submitReorder} disabled={list.length === 0} className="px-5 py-2.5 rounded-xl bg-gradient-success text-success-foreground font-semibold text-sm shadow-md disabled:opacity-50 inline-flex items-center gap-2"><Check className="h-4 w-4"/> Confirm & Order</button>
+            </div>
+          )}
+       </div>
+    </div>
+  )
 }

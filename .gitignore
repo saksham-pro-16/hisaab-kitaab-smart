@@ -11,7 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
-
+.env
+./D:\Antigravity Automations\Hisaab Kitaab\.env
+./D:\Antigravity Automations\Hisaab Kitaab\hisaab-kitaab-smart\.env
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
