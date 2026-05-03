@@ -113,3 +113,8 @@ export const aiInsightsAPI = {
 export const predictionsAPI = {
     getStockPrediction: () => api.get('/predictions/stock'),
 };
+
+// Trending API
+export const trendingAPI = {
+    generate: () => api.get('/trending/generate'),
+};

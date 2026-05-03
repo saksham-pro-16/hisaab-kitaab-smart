@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import { NavLink } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
-import { billsAPI, productsAPI, aiInsightsAPI, predictionsAPI } from "@/lib/api";
+import { billsAPI, productsAPI, aiInsightsAPI, predictionsAPI, trendingAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -50,6 +50,8 @@ export default function Dashboard() {
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [stockPrediction, setStockPrediction] = useState<any>(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
+  const [trendingData, setTrendingData] = useState<any[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
 
   // Hindi taglines that rotate on each page load
   const taglines = useMemo(() => [
@@ -98,6 +100,7 @@ export default function Dashboard() {
     fetchDashboardData();
     fetchAIInsights();
     fetchStockPrediction();
+    fetchTrending();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -252,6 +255,25 @@ export default function Dashboard() {
       setStockPrediction(null);
     } finally {
       setPredictionLoading(false);
+    }
+  };
+
+  const fetchTrending = async () => {
+    try {
+      setTrendingLoading(true);
+      console.log('📈 Fetching trending data...');
+      const { data } = await trendingAPI.generate();
+      console.log('✅ Trending data received:', data);
+      setTrendingData(data.data || []);
+      if (data.data && data.data.length > 0) {
+        toast.success('Market trends updated!');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching trending:', error);
+      // Fallback to mock data
+      setTrendingData(trending);
+    } finally {
+      setTrendingLoading(false);
     }
   };
 
@@ -611,18 +633,62 @@ export default function Dashboard() {
         </div>
 
         <div className="rounded-2xl bg-card border border-border/60 p-5 shadow-soft animate-fade-up">
-          <h2 className="font-semibold text-foreground">Trending in your area</h2>
-          <p className="text-xs text-muted-foreground">Market demand intelligence</p>
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h2 className="font-semibold text-foreground">Trending in your area</h2>
+              <p className="text-xs text-muted-foreground">AI-powered market demand intelligence</p>
+            </div>
+            <button
+              onClick={fetchTrending}
+              disabled={trendingLoading}
+              className="text-xs font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-50 flex items-center gap-1"
+            >
+              {trendingLoading ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="h-3 w-3" />
+                  Refresh
+                </>
+              )}
+            </button>
+          </div>
           <div className="mt-3 space-y-2">
-            {trending.map((t) => (
-              <div key={t.name} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-smooth">
-                <div>
-                  <p className="font-semibold text-sm">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.reason}</p>
+            {trendingLoading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 animate-pulse">
+                  <div className="flex-1">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-full"></div>
+                  </div>
+                  <div className="h-6 w-16 bg-muted rounded-lg ml-3"></div>
                 </div>
-                <span className="text-sm font-bold text-success bg-success-soft px-2.5 py-1 rounded-lg">{t.change}</span>
-              </div>
-            ))}
+              ))
+            ) : trendingData.length > 0 ? (
+              trendingData.map((t) => (
+                <div key={t.id || t.name} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-smooth">
+                  <div>
+                    <p className="font-semibold text-sm">{t.emoji ? `${t.emoji} ` : ''}{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.reason}</p>
+                  </div>
+                  <span className="text-sm font-bold text-success bg-success-soft px-2.5 py-1 rounded-lg">{t.change}</span>
+                </div>
+              ))
+            ) : (
+              trending.map((t) => (
+                <div key={t.name} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-smooth">
+                  <div>
+                    <p className="font-semibold text-sm">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.reason}</p>
+                  </div>
+                  <span className="text-sm font-bold text-success bg-success-soft px-2.5 py-1 rounded-lg">{t.change}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

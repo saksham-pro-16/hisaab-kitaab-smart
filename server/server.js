@@ -24,6 +24,7 @@ import storeRoutes from './routes/storeRoutes.js';
 import supplierRoutes from './routes/supplierRoutes.js';
 import insightsRoutes from './routes/insightsRoutes.js';
 import predictionRoutes from './routes/predictionRoutes.js';
+import trendingRoutes from './routes/trendingRoutes.js';
 const allowedOrigins = [
     'http://127.0.0.1:8080',
     'http://localhost:8080',
@@ -72,6 +73,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/insights', insightRoutes);
 app.use('/api/ai-insights', insightsRoutes);
 app.use('/api/predictions', predictionRoutes);
+app.use('/api/trending', trendingRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/suppliers', supplierRoutes);
 
