@@ -375,6 +375,98 @@ async function callAIProviders(prompt) {
         console.warn('⚠️ Gemini failed:', e.message);
     }
 
+    // 3. Try OpenRouter
+    try {
+        const openRouterKey = process.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+        if (openRouterKey) {
+            console.log('🤖 Trying OpenRouter for prediction...');
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${openRouterKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'http://localhost:3000',
+                    'X-Title': 'Retail Store Management'
+                },
+                body: JSON.stringify({
+                    model: 'google/gemini-flash-1.5',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.5
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ OpenRouter prediction generated');
+                return data.choices[0].message.content;
+            } else {
+                const errorText = await response.text();
+                console.warn('⚠️ OpenRouter failed:', errorText);
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ OpenRouter failed:', e.message);
+    }
+
+    // 4. Try Mistral
+    try {
+        const mistralKey = process.env.VITE_MISTRAL_API_KEY || process.env.MISTRAL_API_KEY;
+        if (mistralKey) {
+            console.log('🤖 Trying Mistral AI for prediction...');
+            const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${mistralKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'mistral-large-latest',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.5
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Mistral AI prediction generated');
+                return data.choices[0].message.content;
+            } else {
+                const errorText = await response.text();
+                console.warn('⚠️ Mistral failed:', errorText);
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Mistral failed:', e.message);
+    }
+
+    // 5. Try DeepSeek (Final fallback)
+    try {
+        const deepseekKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+        if (deepseekKey) {
+            console.log('🤖 Trying DeepSeek AI for prediction...');
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${deepseekKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.5
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ DeepSeek AI prediction generated');
+                return data.choices[0].message.content;
+            } else {
+                const errorText = await response.text();
+                console.warn('⚠️ DeepSeek failed:', errorText);
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ DeepSeek failed:', e.message);
+    }
+
     throw new Error('All AI providers failed');
 }
 

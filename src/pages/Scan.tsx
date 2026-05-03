@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Sparkles, Check, X, Loader2 } from "lucide-react";
+import { Camera, Upload, Sparkles, Check, X, Loader2, Plus } from "lucide-react";
 import Webcam from "react-webcam";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { products, billStore, BillItem } from "@/lib/mockData";
@@ -149,21 +149,46 @@ Example output:
         console.warn("Mistral failed", e);
       }
 
-      throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral) failed to process the image.");
+      // try {
+      //   const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+      //   if (!deepseekApiKey) throw new Error("DeepSeek API key is missing.");
+      //   const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      //     method: "POST",
+      //     headers: { "Authorization": `Bearer ${deepseekApiKey}`, "Content-Type": "application/json" },
+      //     body: JSON.stringify({
+      //       model: "deepseek-chat",
+      //       messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: base64Str } }] }],
+      //       temperature: 0,
+      //     })
+      //   });
+      //   if (!res.ok) throw new Error(await res.text());
+      //   const data = await res.json();
+      //   return data.choices[0].message.content;
+      // } catch (e) {
+      //   console.warn("DeepSeek failed", e);
+      // }
+
     };
 
     try {
       text = await attemptProviders();
     } catch (e: any) {
       console.error(e);
-      toast.error(e.message);
+      toast.error("All AI models failed. Using fallback: Please manually enter items.");
+
+      // Fallback: Show empty form with today's date
+      setItems([]);
+      setBillDate(new Date().toISOString().split('T')[0]);
       setLoading(false);
-      setImageSrc(null);
+
+      toast.info("You can manually add items by clicking the + button below", {
+        duration: 5000,
+      });
       return;
     }
 
     try {
-      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const cleanText = text?.replace(/```json/g, '').replace(/```/g, '').trim();
       let parsed: any = {};
       try {
         parsed = JSON.parse(cleanText);
@@ -358,6 +383,7 @@ Example output:
                   value={it.name}
                   onChange={(e) => setItems((arr) => arr.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)))}
                   className="col-span-6 px-3 py-2 rounded-lg bg-muted/50 outline-none focus:bg-card focus:border-primary border border-transparent text-sm"
+                  placeholder="Item name"
                 />
                 <input
                   type="number"
@@ -380,8 +406,24 @@ Example output:
             ))}
 
             {items.length === 0 && (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                No items could be clearly extracted. Try scanning again.
+              <div className="p-8 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  No items could be clearly extracted. Add items manually or try scanning again.
+                </p>
+                <button
+                  onClick={() => {
+                    setItems([{
+                      productId: "manual-" + Date.now(),
+                      name: "",
+                      emoji: "📦",
+                      price: 0,
+                      qty: 1,
+                    }]);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-smooth"
+                >
+                  <Plus className="h-4 w-4" /> Add Item Manually
+                </button>
               </div>
             )}
           </div>
@@ -392,10 +434,26 @@ Example output:
             >
               Scan Again
             </button>
+            {items.length > 0 && (
+              <button
+                onClick={() => {
+                  setItems([...items, {
+                    productId: "manual-" + Date.now(),
+                    name: "",
+                    emoji: "📦",
+                    price: 0,
+                    qty: 1,
+                  }]);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-muted border border-border font-semibold text-sm hover:bg-secondary transition-smooth inline-flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" /> Add Item
+              </button>
+            )}
             <button
               onClick={handleSaveBill}
-              disabled={items.length === 0}
-              className="flex-[2] inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-success text-success-foreground font-semibold text-sm shadow-md hover:opacity-90 transition-smooth disabled:opacity-50"
+              disabled={items.length === 0 || items.some(i => !i.name || i.price <= 0 || i.qty <= 0)}
+              className="flex-[2] inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-success text-success-foreground font-semibold text-sm shadow-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="h-4 w-4" /> Save to Billing
             </button>

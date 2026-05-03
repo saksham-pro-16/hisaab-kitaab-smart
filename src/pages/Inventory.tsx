@@ -265,8 +265,8 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
 
   const analyze = async () => {
     setLoading(true);
+    const allProducts = products.map(p => ({ id: p._id, name: p.name, stock: p.stock, minStock: p.minStock }));
     try {
-      const allProducts = products.map(p => ({ id: p._id, name: p.name, stock: p.stock, minStock: p.minStock }));
       const { data: billsData } = await billsAPI.getAll();
       const allBills = billsData.data || [];
 
@@ -357,10 +357,30 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
           const data = await res.json();
           return data.choices[0].message.content;
         } catch (e) {
-          console.warn("Mistral failed", e);
+          console.warn("Mistral failed, trying DeepSeek...", e);
         }
 
-        throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral) failed to process.");
+        // 5. DeepSeek (Final fallback)
+        try {
+          const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+          if (!deepseekApiKey) throw new Error("DeepSeek API key is missing.");
+          const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${deepseekApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("DeepSeek failed", e);
+        }
+
+        throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral, DeepSeek) failed to process.");
       };
 
       const responseText = await attemptProviders();
@@ -376,7 +396,32 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
       toast.success("AI Analysis complete!");
     } catch (e: any) {
       console.error(e);
-      toast.error(e.message || "Failed to analyze inventory");
+
+      // Fallback: Generate basic reorder list based on low stock
+      const lowStockProducts = allProducts.filter(p => p.stock < p.minStock)
+        .sort((a, b) => (a.stock / a.minStock) - (b.stock / b.minStock))
+        .slice(0, 5)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          emoji: "📦",
+          qty: Math.max(p.minStock * 2 - p.stock, p.minStock),
+          reason: `Low stock: ${p.stock}/${p.minStock} units`
+        }));
+
+      if (lowStockProducts.length > 0) {
+        setList(lowStockProducts);
+        setAnalyzed(true);
+        toast.warning("AI models failed. Showing basic low-stock analysis.");
+        toast.info("Reorder suggestions based on minimum stock levels", {
+          duration: 5000,
+        });
+      } else {
+        toast.error("All AI models failed and no low-stock items found.");
+        toast.info("Your inventory looks healthy! No immediate reordering needed.", {
+          duration: 5000,
+        });
+      }
     } finally {
       setLoading(false);
     }

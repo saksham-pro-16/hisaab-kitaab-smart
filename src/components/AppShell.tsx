@@ -10,7 +10,6 @@ const navItems = [
   { to: "/inventory", label: "Inventory", icon: Package },
   { to: "/scan", label: "Scan Bill", icon: ScanLine },
   { to: "/marketplace", label: "Market", icon: ShoppingBag },
-  { to: "/customers", label: "Customers", icon: Users },
   { to: "/catalog", label: "Catalog", icon: ListPlus },
   { to: "/integrations", label: "Integrations", icon: Link2 },
 ];
