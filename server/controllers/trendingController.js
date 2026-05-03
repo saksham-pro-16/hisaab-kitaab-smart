@@ -245,6 +245,66 @@ async function callAIProviders(prompt) {
         console.warn('⚠️ OpenRouter failed:', e.message);
     }
 
+    // 4. Try Mistral
+    try {
+        const mistralKey = process.env.VITE_MISTRAL_API_KEY || process.env.MISTRAL_API_KEY;
+        if (mistralKey) {
+            console.log('🤖 Trying Mistral AI for trending...');
+            const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${mistralKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'mistral-large-latest',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Mistral AI trending generated');
+                return data.choices[0].message.content;
+            } else {
+                const errorText = await response.text();
+                console.warn('⚠️ Mistral failed:', errorText);
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Mistral failed:', e.message);
+    }
+
+    // 5. Try DeepSeek (Final fallback)
+    try {
+        const deepseekKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+        if (deepseekKey) {
+            console.log('🤖 Trying DeepSeek AI for trending...');
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${deepseekKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ DeepSeek AI trending generated');
+                return data.choices[0].message.content;
+            } else {
+                const errorText = await response.text();
+                console.warn('⚠️ DeepSeek failed:', errorText);
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ DeepSeek failed:', e.message);
+    }
+
     throw new Error('All AI providers failed');
 }
 

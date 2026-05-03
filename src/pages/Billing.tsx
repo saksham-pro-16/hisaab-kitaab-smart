@@ -1205,8 +1205,27 @@ Important: Match the items to the inventory list. Do NOT use markdown code block
           console.warn("Mistral failed", e);
         }
 
-        throw new Error("All AI models failed to process voice command.");
+        try {
+          const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+          if (!deepseekApiKey) throw new Error("DeepSeek API key is missing.");
+          const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${deepseekApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("DeepSeek failed", e);
+        }
+        throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral, DeepSeek) failed to process.");
       };
+
 
       const responseText = await attemptProviders();
       const cleanText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -1257,7 +1276,15 @@ Important: Match the items to the inventory list. Do NOT use markdown code block
 
     } catch (e: any) {
       console.error(e);
-      toast.error(e.message || "Failed to process voice command. Please try speaking clearly.");
+      toast.error("All AI models failed. Please try speaking again or use manual billing.");
+
+      // Fallback: Show helpful message
+      toast.info("Tip: Speak clearly like 'Add 2 Parle-G and 1 Amul Milk'", {
+        duration: 6000,
+      });
+
+      setProcessing(false);
+      return;
     } finally {
       setProcessing(false);
     }
