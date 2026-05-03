@@ -132,6 +132,8 @@ export type Bill = {
   gst: number;
   discount: number;
   total: number;
+  customerName?: string;
+  customerPhone?: string;
 };
 
 const initialBills: Bill[] = [
