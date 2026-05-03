@@ -74,10 +74,30 @@ Example output:
       const base64Data = base64Str.split(",")[1];
       const mimeType = base64Str.split(",")[0].split(":")[1].split(";")[0];
 
-      // 1. Gemini
+      // 4. Mistral
+      try {
+        const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+        if (!mistralApiKey) throw new Error("Mistral API key is missing.");
+        const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({
+            model: "pixtral-12b-2409",
+            messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: base64Str } }] }],
+            temperature: 0,
+          })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        return data.choices[0].message.content;
+      } catch (e) {
+        console.warn("Mistral failed", e);
+      }
+
+      // 1. VypaarAI
       try {
         const geminiApiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-        if (!geminiApiKey) throw new Error("Gemini API key is missing.");
+        if (!geminiApiKey) throw new Error("VypaarAI API key is missing.");
         const genAI = new GoogleGenerativeAI(geminiApiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const result = await model.generateContent([
@@ -86,7 +106,7 @@ Example output:
         ]);
         return result.response.text();
       } catch (e) {
-        console.warn("Gemini failed, trying Groq...", e);
+        console.warn("VypaarAI failed, trying Groq...", e);
       }
 
       // 2. Groq
@@ -129,15 +149,16 @@ Example output:
         console.warn("OpenRouter failed, trying Mistral...", e);
       }
 
-      // 4. Mistral
+
+
       try {
-        const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
-        if (!mistralApiKey) throw new Error("Mistral API key is missing.");
-        const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
+        if (!deepseekApiKey) throw new Error("DeepSeek API key is missing.");
+        const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
           method: "POST",
-          headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
+          headers: { "Authorization": `Bearer ${deepseekApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "pixtral-12b-2409",
+            model: "deepseek-chat",
             messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: base64Str } }] }],
             temperature: 0,
           })
@@ -146,27 +167,8 @@ Example output:
         const data = await res.json();
         return data.choices[0].message.content;
       } catch (e) {
-        console.warn("Mistral failed", e);
+        console.warn("DeepSeek failed", e);
       }
-
-      // try {
-      //   const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-      //   if (!deepseekApiKey) throw new Error("DeepSeek API key is missing.");
-      //   const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      //     method: "POST",
-      //     headers: { "Authorization": `Bearer ${deepseekApiKey}`, "Content-Type": "application/json" },
-      //     body: JSON.stringify({
-      //       model: "deepseek-chat",
-      //       messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: base64Str } }] }],
-      //       temperature: 0,
-      //     })
-      //   });
-      //   if (!res.ok) throw new Error(await res.text());
-      //   const data = await res.json();
-      //   return data.choices[0].message.content;
-      // } catch (e) {
-      //   console.warn("DeepSeek failed", e);
-      // }
 
     };
 
@@ -290,7 +292,7 @@ Example output:
           </div>
           <h2 className="font-semibold text-lg">Capture or upload bill</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-            Take a clear photo of your bill. Our AI will extract products, quantity and price using Gemini Vision.
+            Take a clear photo of your bill. Our AI will extract products, quantity and price using VypaarAI Vision.
           </p>
           <div className="mt-6 flex gap-3 justify-center">
             <button

@@ -1132,17 +1132,38 @@ Return ONLY valid JSON exactly like this:
 Important: Match the items to the inventory list. Do NOT use markdown code blocks.`;
 
       const attemptProviders = async () => {
-        // 1. Gemini
+
+        // 4. Mistral
+        try {
+          const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+          if (!mistralApiKey) throw new Error("Mistral API key is missing.");
+          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              model: "mistral-large-latest",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("Mistral failed", e);
+        }
+
+        // 1. VypaarAI
         try {
           const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-          if (!apiKey) throw new Error("Gemini API key is missing.");
+          if (!apiKey) throw new Error("VypaarAI API key is missing.");
           const { GoogleGenerativeAI } = await import("@google/generative-ai");
           const genAI = new GoogleGenerativeAI(apiKey);
           const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
           const result = await model.generateContent(promptText);
           return result.response.text();
         } catch (e) {
-          console.warn("Gemini failed, trying Groq...", e);
+          console.warn("VypaarAI failed, trying Groq...", e);
         }
 
         // 2. Groq
@@ -1185,25 +1206,7 @@ Important: Match the items to the inventory list. Do NOT use markdown code block
           console.warn("OpenRouter failed, trying Mistral...", e);
         }
 
-        // 4. Mistral
-        try {
-          const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
-          if (!mistralApiKey) throw new Error("Mistral API key is missing.");
-          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({
-              model: "mistral-large-latest",
-              messages: [{ role: "user", content: promptText }],
-              temperature: 0,
-            })
-          });
-          if (!res.ok) throw new Error(await res.text());
-          const data = await res.json();
-          return data.choices[0].message.content;
-        } catch (e) {
-          console.warn("Mistral failed", e);
-        }
+
 
         try {
           const deepseekApiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
@@ -1223,7 +1226,7 @@ Important: Match the items to the inventory list. Do NOT use markdown code block
         } catch (e) {
           console.warn("DeepSeek failed", e);
         }
-        throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral, DeepSeek) failed to process.");
+        throw new Error("All AI models (VypaarAI, Groq, OpenRouter, Mistral, DeepSeek) failed to process.");
       };
 
 
