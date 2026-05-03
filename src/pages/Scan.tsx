@@ -5,10 +5,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { products, billStore, BillItem } from "@/lib/mockData";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { billsAPI, productsAPI } from "@/lib/api";
 
 export default function Scan() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [items, setItems] = useState<BillItem[]>([]);
+  const [billDate, setBillDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const webcamRef = useRef<Webcam>(null);
@@ -43,19 +45,30 @@ export default function Scan() {
     setLoading(true);
     let text = "";
 
-    const prompt = `You are a smart billing assistant for an Indian Kirana store. Read this bill image. It may contain English and Hindi text. Extract the items, quantities, and unit prices.
+    const prompt = `You are a smart billing assistant for an Indian Kirana store. Read this bill image. It may contain English and Hindi text. Extract the items, quantities, unit prices, and the bill date.
 Try to match the extracted items to the closest sounding items in our inventory list below.
 
 Inventory list:
 ${products.map(p => `${p.id}: ${p.name} (₹${p.price})`).join('\n')}
 
-Return ONLY a valid JSON array of objects with these exact keys:
-- productId (string): Match with inventory ID. If no match, use "new".
-- name (string): The extracted name or matched inventory name.
-- qty (number): The quantity.
-- price (number): The unit price.
+Return ONLY a valid JSON object with these exact keys:
+- billDate (string): The date from the bill in YYYY-MM-DD format. If not found, use today's date.
+- items (array): Array of objects with:
+  - productId (string): Match with inventory ID. If no match, use "new".
+  - name (string): The extracted name or matched inventory name.
+  - qty (number): The quantity.
+  - price (number): The unit price.
 
-Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown code blocks.`;
+Important: Output NOTHING else but the raw JSON object. Do NOT wrap in markdown code blocks.
+
+Example output:
+{
+  "billDate": "2026-05-03",
+  "items": [
+    {"productId": "prod1", "name": "Parle-G", "qty": 2, "price": 10},
+    {"productId": "prod2", "name": "Coca-Cola", "qty": 1, "price": 40}
+  ]
+}`;
 
     const attemptProviders = async () => {
       const base64Data = base64Str.split(",")[1];
@@ -104,7 +117,7 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
           method: "POST",
           headers: { "Authorization": `Bearer ${openRouterApiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash", 
+            model: "google/gemini-2.5-flash",
             messages: [{ role: "user", content: [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: base64Str } }] }],
             temperature: 0,
           })
@@ -151,17 +164,24 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
 
     try {
       const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      let parsed = [];
+      let parsed: any = {};
       try {
         parsed = JSON.parse(cleanText);
       } catch (e) {
         throw new Error("AI returned invalid data format. Please try again.");
       }
 
-      const formattedItems: BillItem[] = parsed.map((item: any) => {
+      // Extract bill date if available
+      if (parsed.billDate) {
+        setBillDate(parsed.billDate);
+      }
+
+      // Extract items
+      const itemsArray = parsed.items || [];
+      const formattedItems: BillItem[] = itemsArray.map((item: any) => {
         const prod = products.find(p => p.id === item.productId);
         return {
-          productId: prod?.id || "new-" + Math.random().toString(36).substr(2, 9),
+          productId: prod?.id || "new-" + Math.random().toString(36).substring(2, 9),
           name: prod?.name || item.name || "Unknown Item",
           emoji: prod?.emoji || "📦",
           price: Number(item.price) || 0,
@@ -170,7 +190,7 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
       });
 
       setItems(formattedItems);
-      toast.success("Bill scanned successfully!");
+      toast.success(`Bill scanned successfully! ${parsed.billDate ? 'Date: ' + new Date(parsed.billDate).toLocaleDateString('en-IN') : ''}`);
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Failed to process image data");
@@ -180,28 +200,55 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
     }
   };
 
-  const handleSaveBill = () => {
+  const handleSaveBill = async () => {
     if (items.length === 0) {
       toast.error("No items to save");
       return;
     }
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-    const gst = subtotal * 0.05;
-    const total = subtotal + gst;
-    
-    const id = `B-${Math.floor(1000 + Math.random() * 9000)}`;
-    billStore.add({
-      id,
-      date: new Date().toISOString(),
-      items,
-      subtotal,
-      gst,
-      discount: 0,
-      total,
-    });
-    
-    toast.success("Bill created and saved successfully!");
-    navigate("/billing");
+
+    try {
+      // Fetch current products from database to get _id
+      const { data: productsData } = await productsAPI.getAll();
+      const dbProducts = productsData.data || [];
+
+      // Validate stock and prepare bill items
+      const billItems = [];
+      for (const item of items) {
+        const dbProduct = dbProducts.find((p: any) => p._id === item.productId || p.name === item.name);
+
+        if (!dbProduct) {
+          toast.error(`Product "${item.name}" not found in database`);
+          return;
+        }
+
+        if (dbProduct.stock < item.qty) {
+          toast.error(`Insufficient stock for "${item.name}". Available: ${dbProduct.stock}, Required: ${item.qty}`);
+          return;
+        }
+
+        billItems.push({
+          product: dbProduct._id,
+          name: item.name,
+          emoji: item.emoji,
+          price: item.price,
+          qty: item.qty,
+          total: item.price * item.qty,
+        });
+      }
+
+      // Create bill in database with custom date
+      await billsAPI.create({
+        items: billItems,
+        discount: 0,
+        billDate,
+      });
+
+      toast.success("Bill created and saved successfully!");
+      navigate("/billing");
+    } catch (error: any) {
+      console.error('Error saving bill:', error);
+      toast.error(error.response?.data?.message || "Failed to save bill");
+    }
   };
 
   return (
@@ -221,21 +268,21 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
             Take a clear photo of your bill. Our AI will extract products, quantity and price using Gemini Vision.
           </p>
           <div className="mt-6 flex gap-3 justify-center">
-            <button 
-              onClick={() => setIsCameraOpen(true)} 
+            <button
+              onClick={() => setIsCameraOpen(true)}
               className="inline-flex items-center gap-2 bg-gradient-primary text-primary-foreground px-5 py-2.5 rounded-xl font-semibold text-sm shadow-glow hover:opacity-90 transition-smooth"
             >
               <Camera className="h-4 w-4" /> Open Camera
             </button>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleFileUpload} 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
             />
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
+            <button
+              onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-2 bg-muted px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-secondary transition-smooth"
             >
               <Upload className="h-4 w-4" /> Upload File
@@ -254,14 +301,14 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
             className="w-full h-auto aspect-[4/3] object-cover"
           />
           <div className="absolute bottom-6 inset-x-0 flex justify-center gap-4">
-            <button 
-              onClick={() => setIsCameraOpen(false)} 
+            <button
+              onClick={() => setIsCameraOpen(false)}
               className="bg-white/20 backdrop-blur text-white px-5 py-3 rounded-full font-bold text-sm hover:bg-white/30 transition-smooth border border-white/20"
             >
               Cancel
             </button>
-            <button 
-              onClick={handleCapture} 
+            <button
+              onClick={handleCapture}
               className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold shadow-glow hover:scale-105 transition-smooth"
             >
               Capture
@@ -284,9 +331,24 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
             <Sparkles className="h-4 w-4" />
             <p className="text-sm font-semibold">AI extracted {items.length} items — verify below</p>
           </div>
-          
+
           <div className="p-4 bg-muted/30 border-b border-border flex justify-center">
-             <img src={imageSrc} alt="Scanned Bill" className="h-32 object-contain rounded-xl border border-border/50 shadow-sm" />
+            <img src={imageSrc} alt="Scanned Bill" className="h-32 object-contain rounded-xl border border-border/50 shadow-sm" />
+          </div>
+
+          {/* Bill Date Input */}
+          <div className="p-4 bg-muted/20 border-b border-border">
+            <label className="text-sm font-semibold mb-2 block">Bill Date</label>
+            <input
+              type="date"
+              value={billDate}
+              onChange={(e) => setBillDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full px-3 py-2 rounded-lg bg-card border border-border focus:border-primary outline-none text-sm transition-smooth"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {billDate ? `Date: ${new Date(billDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : 'Select bill date'}
+            </p>
           </div>
 
           <div className="divide-y divide-border/60">
@@ -316,7 +378,7 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
                 </button>
               </div>
             ))}
-            
+
             {items.length === 0 && (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 No items could be clearly extracted. Try scanning again.
@@ -324,13 +386,13 @@ Important: Output NOTHING else but the raw JSON array. Do NOT wrap in markdown c
             )}
           </div>
           <div className="p-4 flex gap-2 bg-muted/30 border-t border-border">
-            <button 
-              onClick={() => { setImageSrc(null); setItems([]); }} 
+            <button
+              onClick={() => { setImageSrc(null); setItems([]); setBillDate(new Date().toISOString().split('T')[0]); }}
               className="flex-1 py-2.5 rounded-xl bg-card border border-border font-semibold text-sm hover:bg-muted transition-smooth"
             >
               Scan Again
             </button>
-            <button 
+            <button
               onClick={handleSaveBill}
               disabled={items.length === 0}
               className="flex-[2] inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-success text-success-foreground font-semibold text-sm shadow-md hover:opacity-90 transition-smooth disabled:opacity-50"

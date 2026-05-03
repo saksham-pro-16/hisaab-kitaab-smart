@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { billStore, Bill } from "@/lib/mockData";
+import { billsAPI, productsAPI } from "@/lib/api";
 
 // Detailed Mock Data for Customers
 const INITIAL_CUSTOMERS = [
@@ -22,14 +23,14 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹12,450",
     lastOrderDate: new Date(2026, 4, 25),
     recentOrders: [
-      { 
+      {
         id: "ORD-9821", date: new Date(2026, 4, 25), amount: 450, status: "Delivered",
         items: [
           { productId: "p1", name: "Parle-G Biscuit", emoji: "🍪", qty: 5, price: 10 },
           { productId: "p3", name: "Coca-Cola 750ml", emoji: "🥤", qty: 10, price: 40 }
         ]
       },
-      { 
+      {
         id: "ORD-9754", date: new Date(2026, 4, 18), amount: 1200, status: "Delivered",
         items: [
           { productId: "p6", name: "Surf Excel 1kg", emoji: "🧺", qty: 2, price: 165 },
@@ -50,7 +51,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹45,800",
     lastOrderDate: new Date(2026, 4, 28),
     recentOrders: [
-      { 
+      {
         id: "ORD-9901", date: new Date(2026, 4, 28), amount: 2100, status: "Processing",
         items: [
           { productId: "p31", name: "Daawat Basmati 1kg", emoji: "🍚", qty: 10, price: 130 },
@@ -59,7 +60,7 @@ const INITIAL_CUSTOMERS = [
           { productId: "p33", name: "MDH Garam Masala", emoji: "🌶️", qty: 1, price: 85 }
         ]
       },
-      { 
+      {
         id: "ORD-9800", date: new Date(2026, 4, 20), amount: 3450, status: "Delivered",
         items: [
           { productId: "p56", name: "boAt Rockerz 450", emoji: "🎧", qty: 2, price: 1499 },
@@ -79,7 +80,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹3,200",
     lastOrderDate: new Date(2026, 3, 15),
     recentOrders: [
-      { 
+      {
         id: "ORD-9102", date: new Date(2026, 3, 15), amount: 850, status: "Delivered",
         items: [
           { productId: "p10", name: "Dairy Milk 50g", emoji: "🍫", qty: 5, price: 50 },
@@ -99,7 +100,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹18,900",
     lastOrderDate: new Date(2026, 4, 29),
     recentOrders: [
-      { 
+      {
         id: "ORD-9950", date: new Date(2026, 4, 29), amount: 1150, status: "Out for Delivery",
         items: [
           { productId: "p12", name: "Bisleri 1L", emoji: "💧", qty: 10, price: 20 },
@@ -119,7 +120,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹1,400",
     lastOrderDate: new Date(2026, 4, 30),
     recentOrders: [
-      { 
+      {
         id: "ORD-9988", date: new Date(2026, 4, 30), amount: 1400, status: "Processing",
         items: [
           { productId: "p68", name: "Men's Cotton T-Shirt", emoji: "👕", qty: 4, price: 349 }
@@ -138,7 +139,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹67,500",
     lastOrderDate: new Date(2026, 4, 27),
     recentOrders: [
-      { 
+      {
         id: "ORD-9876", date: new Date(2026, 4, 27), amount: 4500, status: "Delivered",
         items: [
           { productId: "p65", name: "Smart Watch Fire-Boltt", emoji: "⌚", qty: 2, price: 1599 },
@@ -158,7 +159,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹9,800",
     lastOrderDate: new Date(2026, 4, 10),
     recentOrders: [
-      { 
+      {
         id: "ORD-9654", date: new Date(2026, 4, 10), amount: 650, status: "Delivered",
         items: [
           { productId: "p45", name: "Dove Soap 100g", emoji: "🛁", qty: 10, price: 65 }
@@ -177,7 +178,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹4,100",
     lastOrderDate: new Date(2026, 2, 28),
     recentOrders: [
-      { 
+      {
         id: "ORD-8900", date: new Date(2026, 2, 28), amount: 1100, status: "Delivered",
         items: [
           { productId: "p41", name: "Lizol 500ml", emoji: "🧴", qty: 10, price: 110 }
@@ -196,7 +197,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹850",
     lastOrderDate: new Date(2026, 4, 30),
     recentOrders: [
-      { 
+      {
         id: "ORD-9999", date: new Date(2026, 4, 30), amount: 850, status: "Processing",
         items: [
           { productId: "p33", name: "MDH Garam Masala", emoji: "🌶️", qty: 10, price: 85 }
@@ -215,7 +216,7 @@ const INITIAL_CUSTOMERS = [
     totalSpent: "₹25,400",
     lastOrderDate: new Date(2026, 4, 25),
     recentOrders: [
-      { 
+      {
         id: "ORD-9840", date: new Date(2026, 4, 25), amount: 2540, status: "Out for Delivery",
         items: [
           { productId: "p52", name: "Pampers Diapers", emoji: "👶", qty: 5, price: 299 },
@@ -270,7 +271,7 @@ export default function Customers() {
         icon: <ShoppingBag className="h-4 w-4 text-emerald-500" />,
         duration: 5000,
       });
-      
+
       // Also simulate a general bell notification sound/alert if needed
       const bell = document.querySelector('.bg-alert');
       if (bell) {
@@ -280,51 +281,77 @@ export default function Customers() {
     }, 1500);
   };
 
-  const handleDeliverOrder = (orderId: string, orderDetails: any) => {
-    // 1. Update order status
-    setCustomers(prev => prev.map(c => {
-      if (c.id === selectedCustomer?.id) {
-        return {
-          ...c,
-          recentOrders: c.recentOrders.map(o => 
+  const handleDeliverOrder = async (orderId: string, orderDetails: any) => {
+    try {
+      // Fetch current products from database to get _id
+      const { data: productsData } = await productsAPI.getAll();
+      const dbProducts = productsData.data || [];
+
+      // Validate stock and prepare bill items
+      const billItems = [];
+      for (const item of orderDetails.items) {
+        const dbProduct = dbProducts.find((p: any) => p._id === item.productId || p.name === item.name);
+
+        if (!dbProduct) {
+          toast.error(`Product "${item.name}" not found in database`);
+          return;
+        }
+
+        if (dbProduct.stock < item.qty) {
+          toast.error(`Insufficient stock for "${item.name}". Available: ${dbProduct.stock}, Required: ${item.qty}`);
+          return;
+        }
+
+        billItems.push({
+          product: dbProduct._id,
+          name: item.name,
+          emoji: item.emoji,
+          price: item.price,
+          qty: item.qty,
+          total: item.price * item.qty, // Add item total
+        });
+      }
+
+      const subtotal = orderDetails.amount;
+      const gst = Math.round(subtotal * 0.05);
+      const total = subtotal + gst;
+
+      // Create bill in database (backend calculates totals)
+      await billsAPI.create({
+        items: billItems,
+        discount: 0,
+      });
+
+      // Update order status in local state
+      setCustomers(prev => prev.map(c => {
+        if (c.id === selectedCustomer?.id) {
+          return {
+            ...c,
+            recentOrders: c.recentOrders.map(o =>
+              o.id === orderId ? { ...o, status: "Delivered" } : o
+            )
+          };
+        }
+        return c;
+      }));
+
+      // Update selected customer local state so the UI refreshes
+      if (selectedCustomer) {
+        setSelectedCustomer({
+          ...selectedCustomer,
+          recentOrders: selectedCustomer.recentOrders.map(o =>
             o.id === orderId ? { ...o, status: "Delivered" } : o
           )
-        };
+        });
       }
-      return c;
-    }));
 
-    // Update selected customer local state so the UI refreshes
-    if (selectedCustomer) {
-      setSelectedCustomer({
-        ...selectedCustomer,
-        recentOrders: selectedCustomer.recentOrders.map(o => 
-          o.id === orderId ? { ...o, status: "Delivered" } : o
-        )
+      toast.success(`Order ${orderId} delivered!`, {
+        description: "A new bill has been successfully generated in your records."
       });
+    } catch (error: any) {
+      console.error('Error delivering order:', error);
+      toast.error(error.response?.data?.message || "Failed to deliver order and create bill");
     }
-
-    // 2. Add to billing database (billStore)
-    const newBill: Bill = {
-      id: `BILL-${orderId.split("-")[1]}`,
-      date: new Date().toISOString(),
-      items: orderDetails.items.map((i: any) => ({
-        productId: i.productId,
-        name: i.name,
-        emoji: i.emoji,
-        price: i.price,
-        qty: i.qty
-      })),
-      subtotal: orderDetails.amount,
-      gst: Math.round(orderDetails.amount * 0.05),
-      discount: 0,
-      total: orderDetails.amount + Math.round(orderDetails.amount * 0.05)
-    };
-    billStore.add(newBill);
-
-    toast.success(`Order ${orderId} delivered!`, {
-      description: "A new bill has been successfully generated in your records."
-    });
   };
 
   return (
@@ -361,22 +388,22 @@ export default function Customers() {
                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 grid place-items-center text-primary font-bold text-lg shadow-sm">
                   {customer.name.charAt(0)}
                 </div>
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className={
                     customer.type === "Premium" ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/10" :
-                    customer.type === "New" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/10" :
-                    "bg-muted text-muted-foreground hover:bg-muted"
+                      customer.type === "New" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/10" :
+                        "bg-muted text-muted-foreground hover:bg-muted"
                   }
                 >
                   {customer.type}
                 </Badge>
               </div>
-              
+
               <h3 className="font-bold text-lg leading-tight mb-1 group-hover:text-primary transition-colors">
                 {customer.name}
               </h3>
-              
+
               <div className="space-y-1 mt-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Phone className="h-3 w-3 shrink-0" />
@@ -423,7 +450,7 @@ export default function Customers() {
                 </div>
               </div>
             </div>
-            
+
             <ScrollArea className="max-h-[60vh]">
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -489,7 +516,7 @@ export default function Customers() {
 
                         {order.status !== "Delivered" && (
                           <div className="pt-2">
-                            <Button 
+                            <Button
                               onClick={() => handleDeliverOrder(order.id, order)}
                               className="w-full gap-2 bg-gradient-success text-success-foreground hover:opacity-90 shadow-sm"
                             >
@@ -503,13 +530,13 @@ export default function Customers() {
                 </div>
               </div>
             </ScrollArea>
-            
+
             <DialogFooter className="p-4 border-t border-border/50 bg-muted/10 flex flex-col sm:flex-row gap-2">
               <Button variant="outline" className="sm:flex-1" onClick={() => setSelectedCustomer(null)}>
                 Close
               </Button>
-              <Button 
-                className="sm:flex-1 gap-2" 
+              <Button
+                className="sm:flex-1 gap-2"
                 onClick={handleSimulateOrder}
                 disabled={isOrdering}
               >
@@ -526,8 +553,8 @@ export default function Customers() {
         )}
       </Dialog>
       {addCustomerOpen && (
-        <AddCustomerModal 
-          onClose={() => setAddCustomerOpen(false)} 
+        <AddCustomerModal
+          onClose={() => setAddCustomerOpen(false)}
           onAdd={(newCustomer) => {
             setCustomers([newCustomer, ...customers]);
             toast.success("Customer Added & WhatsApp Sent!", {
@@ -536,7 +563,7 @@ export default function Customers() {
               duration: 5000,
             });
             setAddCustomerOpen(false);
-          }} 
+          }}
         />
       )}
     </div>
@@ -551,7 +578,7 @@ function AddCustomerModal({ onClose, onAdd }: { onClose: () => void, onAdd: (c: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !contact) return toast.error("Please fill Name and Contact");
-    
+
     const newCustomer = {
       id: Date.now(),
       name,
