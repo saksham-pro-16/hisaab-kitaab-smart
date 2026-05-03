@@ -287,17 +287,37 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
       Do NOT wrap in markdown code blocks.`;
 
       const attemptProviders = async () => {
-        // 1. Gemini
+        // 4. Mistral
+        try {
+          const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+          if (!mistralApiKey) throw new Error("Mistral API key is missing.");
+          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              model: "mistral-large-latest",
+              messages: [{ role: "user", content: promptText }],
+              temperature: 0,
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return data.choices[0].message.content;
+        } catch (e) {
+          console.warn("Mistral failed, trying DeepSeek...", e);
+        }
+
+        // 1. VypaarAI
         try {
           const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-          if (!apiKey) throw new Error("Gemini API key is missing.");
+          if (!apiKey) throw new Error("VypaarAI API key is missing.");
           const { GoogleGenerativeAI } = await import("@google/generative-ai");
           const genAI = new GoogleGenerativeAI(apiKey);
           const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
           const result = await model.generateContent(promptText);
           return result.response.text();
         } catch (e) {
-          console.warn("Gemini failed, trying Groq...", e);
+          console.warn("VypaarAI failed, trying Groq...", e);
         }
 
         // 2. Groq
@@ -340,25 +360,7 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
           console.warn("OpenRouter failed, trying Mistral...", e);
         }
 
-        // 4. Mistral
-        try {
-          const mistralApiKey = import.meta.env.VITE_MISTRAL_API_KEY;
-          if (!mistralApiKey) throw new Error("Mistral API key is missing.");
-          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${mistralApiKey}`, "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({
-              model: "mistral-large-latest",
-              messages: [{ role: "user", content: promptText }],
-              temperature: 0,
-            })
-          });
-          if (!res.ok) throw new Error(await res.text());
-          const data = await res.json();
-          return data.choices[0].message.content;
-        } catch (e) {
-          console.warn("Mistral failed, trying DeepSeek...", e);
-        }
+
 
         // 5. DeepSeek (Final fallback)
         try {
@@ -380,7 +382,7 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
           console.warn("DeepSeek failed", e);
         }
 
-        throw new Error("All AI models (Gemini, Groq, OpenRouter, Mistral, DeepSeek) failed to process.");
+        throw new Error("All AI models (VypaarAI, Groq, OpenRouter, Mistral, DeepSeek) failed to process.");
       };
 
       const responseText = await attemptProviders();
@@ -461,7 +463,7 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
           {!analyzed && !loading && (
             <div className="text-center py-10 space-y-4">
               <div className="h-16 w-16 bg-muted text-foreground rounded-full grid place-items-center mx-auto border border-border"><Sparkles className="h-8 w-8" /></div>
-              <h3 className="text-lg font-bold">Let Gemini Analyze Your Inventory</h3>
+              <h3 className="text-lg font-bold">Let VypaarAI Analyze Your Inventory</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">We will look at your current stock levels, low-stock alerts, and recent sales trends from your billing history to predict exactly what and how much you need to reorder.</p>
               <button onClick={analyze} className="mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-6 py-3 rounded-xl font-bold shadow-glow hover:scale-105 transition-smooth">Start Analysis</button>
             </div>
@@ -470,7 +472,7 @@ function AIReorderModal({ onClose, products, onRefresh }: { onClose: () => void,
           {loading && (
             <div className="text-center py-12 space-y-4 animate-pulse">
               <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto" />
-              <p className="font-semibold">Gemini is crunching numbers...</p>
+              <p className="font-semibold">VypaarAI is crunching numbers...</p>
             </div>
           )}
 
